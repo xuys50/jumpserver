@@ -105,6 +105,7 @@ class CommandViewSet(viewsets.ModelViewSet):
 
     """
     command_store = get_command_storage()
+    permission_classes = [IsOrgAdminOrAppUser | IsOrgAuditor]
     serializer_class = SessionCommandSerializer
     filterset_class = CommandFilter
 

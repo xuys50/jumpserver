@@ -5,6 +5,7 @@ from functools import reduce, partial
 from itertools import groupby
 import pytz
 
+from django.utils import timezone
 from django.db.models import QuerySet as DJQuerySet
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import bulk
@@ -142,6 +143,7 @@ class QuerySet(DJQuerySet):
     _storage = None
     _command_store_config = None
     _slice = None  # (from_, size)
+    default_days_ago = 5
 
     def __init__(self, command_store_config):
         self._method_calls = []
@@ -153,6 +155,25 @@ class QuerySet(DJQuerySet):
         _method_calls = {k: list(v) for k, v in groupby(self._method_calls, lambda x: x[0])}
         return _method_calls
 
+    def check_date_range(self, kwargs: dict):
+        date_from = kwargs.get('date_from')
+        date_to = kwargs.get('date_to')
+
+        delta = timezone.timedelta(days=self.default_days_ago)
+
+        if date_from and date_to:
+            pass
+        elif not date_from and not date_to:
+            date_to = timezone.now()
+            date_from = date_to - delta
+        elif date_from and not date_to:
+            date_to = date_from + delta
+        elif not date_from and date_to:
+            date_from = date_to - delta
+
+        kwargs['date_from'] = date_from.timestamp()
+        kwargs['date_to'] = date_to.timestamp()
+
     @lazyproperty
     def _filter_kwargs(self):
         _method_calls = self._grouped_method_calls
@@ -162,6 +183,7 @@ class QuerySet(DJQuerySet):
         _, _, multi_kwargs = zip(*filter_calls)
         kwargs = reduce(lambda x, y: {**x, **y}, multi_kwargs, {})
         kwargs = {k.replace('__exact', ''): v for k, v in kwargs.items()}
+        self.check_date_range(kwargs)
         return kwargs
 
     @lazyproperty
