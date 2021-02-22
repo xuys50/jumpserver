@@ -258,3 +258,6 @@ class QuerySet(DJQuerySet):
 
     def __iter__(self):
         return iter(self.__execute())
+
+    def __len__(self):
+        return self.count()
