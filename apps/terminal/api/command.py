@@ -8,13 +8,14 @@ from rest_framework import viewsets
 from rest_framework import generics
 from rest_framework.fields import DateTimeField
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework.decorators import action
 from django.template import loader
 
 from terminal.models import CommandStorage
 from terminal.filters import CommandFilter
 from orgs.utils import current_org
 from common.permissions import IsOrgAdminOrAppUser, IsOrgAuditor, IsAppUser
+from common.const.http import GET
 from common.utils import get_logger
 from terminal.utils import send_command_alert_mail
 from terminal.serializers import InsecureCommandAlertSerializer
@@ -114,6 +115,16 @@ class CommandViewSet(viewsets.ModelViewSet):
         storage = CommandStorage.objects.get(id=command_storage_id)
         qs = storage.get_command_queryset()
         return qs
+
+    @action(methods=[GET], detail=False, url_name='storages-result-count')
+    def storages_result_count(self, request):
+        data = {}
+        storages = CommandStorage.objects.exclude(name='null')
+        for storage in storages:
+            qs = storage.get_command_queryset()
+            qs = self.filter_queryset(qs)
+            data[str(storage.id)] = qs.count()
+        return Response(data=data)
 
     def create(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data, many=True)
