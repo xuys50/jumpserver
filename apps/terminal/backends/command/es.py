@@ -130,7 +130,7 @@ class CommandStore():
                     ],
                     'must_not': must_not,
                     'filter': [
-                                  {'term': {k: v}} for k, v in exact.items()
+                        {'term': {k: v}} for k, v in exact.items()
                     ] + extra_filter
                 }
             },

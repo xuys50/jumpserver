@@ -14,7 +14,7 @@ class CommandFilter(filters.FilterSet):
         model = Command
         fields = [
             'asset', 'system_user', 'user', 'session', 'risk_level', 'input',
-            'date_from', 'date_to', 'session_id', 'risk_level'
+            'date_from', 'date_to', 'session_id', 'risk_level', 'command_storage_id',
         ]
 
     def filter_by_command_storage_id(self, queryset, name, value):
