@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from django.utils.translation import ugettext_lazy as _
 
 from common.permissions import IsSuperUser
+from terminal.filters import CommandStorageFilter
 from ..models import CommandStorage, ReplayStorage
 from ..serializers import CommandStorageSerializer, ReplayStorageSerializer
 
@@ -30,11 +31,11 @@ class BaseStorageViewSetMixin:
 
 
 class CommandStorageViewSet(BaseStorageViewSetMixin, viewsets.ModelViewSet):
-    filterset_fields = ('name', 'type',)
-    search_fields = filterset_fields
+    search_fields = ('name', 'type',)
     queryset = CommandStorage.objects.all()
     serializer_class = CommandStorageSerializer
     permission_classes = (IsSuperUser,)
+    filterset_class = CommandStorageFilter
 
 
 class ReplayStorageViewSet(BaseStorageViewSetMixin, viewsets.ModelViewSet):

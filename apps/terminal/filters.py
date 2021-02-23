@@ -2,7 +2,7 @@ from django_filters import rest_framework as filters
 from django.db.models import QuerySet
 
 from orgs.utils import current_org
-from terminal.models import Command
+from terminal.models import Command, CommandStorage
 
 
 class CommandFilter(filters.FilterSet):
@@ -53,3 +53,16 @@ class CommandFilter(filters.FilterSet):
         else:
             org_id = current_org.id
         return org_id
+
+
+class CommandStorageFilter(filters.FilterSet):
+    real = filters.BooleanFilter(method='filter_real')
+
+    class Meta:
+        model = CommandStorage
+        fields = ['real', 'name', 'type']
+
+    def filter_real(self, queryset, name, value):
+        if value:
+            queryset = queryset.exclude(name='null')
+        return queryset
