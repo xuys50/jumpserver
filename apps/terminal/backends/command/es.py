@@ -100,19 +100,14 @@ class CommandStore():
                 match[k] = v
 
         # 处理时间
-        extra_filter = []
-        date_from = kwargs.get('date_from')
-        date_to = kwargs.get('date_to')
+        timestamp__gte = kwargs.get('timestamp__gte')
+        timestamp__lte = kwargs.get('timestamp__lte')
+        timestamp_range = {}
 
-        if date_from and date_to:
-            extra_filter.append(
-                {'range': {
-                    'timestamp': {
-                        'gte': date_from,
-                        'lte': date_to,
-                    }
-                }}
-            )
+        if timestamp__gte:
+            timestamp_range['gte'] = timestamp__gte
+        if timestamp__lte:
+            timestamp_range['lte'] = timestamp__lte
 
         # 处理组织
         must_not = []
@@ -130,8 +125,16 @@ class CommandStore():
                     ],
                     'must_not': must_not,
                     'filter': [
-                        {'term': {k: v}} for k, v in exact.items()
-                    ] + extra_filter
+                        {
+                            'term': {k: v}
+                        } for k, v in exact.items()
+                    ] + [
+                        {
+                            'range': {
+                                'timestamp': timestamp_range
+                            }
+                        }
+                    ]
                 }
             },
         }
@@ -155,25 +158,6 @@ class QuerySet(DJQuerySet):
         _method_calls = {k: list(v) for k, v in groupby(self._method_calls, lambda x: x[0])}
         return _method_calls
 
-    def check_date_range(self, kwargs: dict):
-        date_from = kwargs.get('date_from')
-        date_to = kwargs.get('date_to')
-
-        delta = timezone.timedelta(days=self.default_days_ago)
-
-        if date_from and date_to:
-            pass
-        elif not date_from and not date_to:
-            date_to = timezone.now()
-            date_from = date_to - delta
-        elif date_from and not date_to:
-            date_to = date_from + delta
-        elif not date_from and date_to:
-            date_from = date_to - delta
-
-        kwargs['date_from'] = date_from.timestamp()
-        kwargs['date_to'] = date_to.timestamp()
-
     @lazyproperty
     def _filter_kwargs(self):
         _method_calls = self._grouped_method_calls
@@ -182,9 +166,14 @@ class QuerySet(DJQuerySet):
             return {}
         _, _, multi_kwargs = zip(*filter_calls)
         kwargs = reduce(lambda x, y: {**x, **y}, multi_kwargs, {})
-        kwargs = {k.replace('__exact', ''): v for k, v in kwargs.items()}
-        self.check_date_range(kwargs)
-        return kwargs
+
+        striped_kwargs = {}
+        for k, v in kwargs.items():
+            k = k.replace('__exact', '')
+            k = k.replace('__startswith', '')
+            k = k.replace('__icontains', '')
+            striped_kwargs[k] = v
+        return striped_kwargs
 
     @lazyproperty
     def _sort(self):

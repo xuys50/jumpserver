@@ -1,14 +1,17 @@
 from django_filters import rest_framework as filters
+from django.db.models import QuerySet
 
 from orgs.utils import current_org
 from terminal.models import Command
 
 
 class CommandFilter(filters.FilterSet):
-    date_from = filters.DateTimeFilter()
-    date_to = filters.DateTimeFilter()
+    date_from = filters.DateTimeFilter(method='do_nothing')
+    date_to = filters.DateTimeFilter(method='do_nothing')
     session_id = filters.CharFilter(field_name='session')
-    command_storage_id = filters.UUIDFilter(method='filter_by_command_storage_id')
+    command_storage_id = filters.UUIDFilter(method='do_nothing')
+    user = filters.CharFilter(lookup_expr='startswith')
+    input = filters.CharFilter(lookup_expr='icontains')
 
     class Meta:
         model = Command
@@ -17,13 +20,30 @@ class CommandFilter(filters.FilterSet):
             'date_from', 'date_to', 'session_id', 'risk_level', 'command_storage_id',
         ]
 
-    def filter_by_command_storage_id(self, queryset, name, value):
+    def do_nothing(self, queryset, name, value):
         return queryset
 
     @property
     def qs(self):
         qs = super().qs
         qs = qs.filter(org_id=self.get_org_id())
+        qs = self.filter_by_timestamp(qs)
+        return qs
+
+    def filter_by_timestamp(self, qs: QuerySet):
+        date_from = self.form.cleaned_data.get('date_from')
+        date_to = self.form.cleaned_data.get('date_to')
+
+        filters = {}
+        if date_from:
+            date_from = date_from.timestamp()
+            filters['timestamp__gte'] = date_from
+
+        if date_to:
+            date_to = date_to.timestamp()
+            filters['timestamp__lte'] = date_to
+
+        qs = qs.filter(**filters)
         return qs
 
     @staticmethod
