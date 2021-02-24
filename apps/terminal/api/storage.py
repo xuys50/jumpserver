@@ -3,8 +3,10 @@
 
 from rest_framework import viewsets, generics, status
 from rest_framework.response import Response
+from rest_framework.decorators import action
 from django.utils.translation import ugettext_lazy as _
 
+from common.const.http import GET
 from common.permissions import IsSuperUser
 from terminal.filters import CommandStorageFilter
 from ..models import CommandStorage, ReplayStorage
@@ -36,6 +38,33 @@ class CommandStorageViewSet(BaseStorageViewSetMixin, viewsets.ModelViewSet):
     serializer_class = CommandStorageSerializer
     permission_classes = (IsSuperUser,)
     filterset_class = CommandStorageFilter
+
+    @action(methods=[GET], detail=False)
+    def tree(self, request):
+        queryset = self.filter_queryset(self.get_queryset())
+        queryset = queryset.exclude(name='null')
+
+        root = {
+            'id': 'root',
+            'name': _('Command storages'),
+            'title': _('Command storages'),
+            'pId': '',
+            'isParent': True,
+            'open': True,
+        }
+
+        nodes = [
+            {
+                'id': storage.id,
+                'name': storage.name,
+                'title': f'{storage.name}({storage.type})',
+                'pId': 'root',
+                'isParent': False,
+                'open': False,
+            } for storage in queryset
+        ]
+        nodes.append(root)
+        return Response(data=nodes)
 
 
 class ReplayStorageViewSet(BaseStorageViewSetMixin, viewsets.ModelViewSet):
