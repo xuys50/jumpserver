@@ -8,11 +8,11 @@ from django.conf import settings
 from django.db.models import Q, QuerySet
 
 from common.db.models import output_as_string
-from common.utils.common import lazyproperty, timeit, Time
+from common.utils.common import lazyproperty, timeit
 from assets.utils import NodeAssetsUtil
 from common.utils import get_logger
 from common.decorator import on_transaction_commit
-from orgs.utils import tmp_to_org, current_org, ensure_in_real_or_default_org
+from orgs.utils import tmp_to_org, current_org, ensure_in_real_or_default_org, tmp_to_root_org
 from assets.models import (
     Asset, FavoriteAsset, AssetQuerySet, NodeQuerySet
 )
@@ -375,7 +375,9 @@ class UserGrantedTreeRefreshController:
     @timeit
     def refresh_if_need(self, force=False):
         user = self.user
-        exists = UserAssetGrantedTreeNodeRelation.objects.filter(user=user).exists()
+
+        with tmp_to_root_org():
+            exists = UserAssetGrantedTreeNodeRelation.objects.filter(user=user).exists()
 
         if force or not exists:
             orgs = self.orgs
