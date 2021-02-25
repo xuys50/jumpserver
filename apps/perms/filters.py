@@ -134,13 +134,15 @@ class AssetPermissionFilter(PermissionBaseFilter):
         if not _nodes:
             return queryset.none()
 
+        node = _nodes.get()
+
         if not is_query_all:
-            queryset = queryset.filter(nodes__in=_nodes)
+            queryset = queryset.filter(nodes=node)
             return queryset
-        nodes = set(_nodes)
-        for node in _nodes:
-            nodes |= set(node.get_ancestors(with_self=True))
-        queryset = queryset.filter(nodes__in=nodes)
+        nodeids = node.get_ancestors(with_self=True).values_list('id', flat=True)
+        nodeids = list(nodeids)
+
+        queryset = queryset.filter(nodes__in=nodeids)
         return queryset
 
     def filter_asset(self, queryset):
@@ -159,19 +161,23 @@ class AssetPermissionFilter(PermissionBaseFilter):
             return queryset
         if not assets:
             return queryset.none()
-        if not is_query_all:
-            queryset = queryset.filter(assets__in=assets)
-            return queryset
-        inherit_all_nodes = set()
-        inherit_nodes_keys = assets.all().values_list('nodes__key', flat=True)
+        asset = assets.get()
 
-        for key in inherit_nodes_keys:
-            if key is None:
-                continue
+        if not is_query_all:
+            queryset = queryset.filter(assets=asset)
+            return queryset
+        inherit_all_nodekeys = set()
+        inherit_nodekeys = asset.nodes.values_list('key', flat=True)
+
+        for key in inherit_nodekeys:
             ancestor_keys = Node.get_node_ancestor_keys(key, with_self=True)
-            inherit_all_nodes.update(ancestor_keys)
+            inherit_all_nodekeys.update(ancestor_keys)
+
+        inherit_all_nodeids = Node.objects.filter(key__in=inherit_all_nodekeys).values_list('id', flat=True)
+        inherit_all_nodeids = list(inherit_all_nodeids)
+
         queryset = queryset.filter(
-            Q(assets__in=assets) | Q(nodes__key__in=inherit_all_nodes)
+            Q(assets=asset) | Q(nodes__id__in=inherit_all_nodeids)
         ).distinct()
         return queryset
 
