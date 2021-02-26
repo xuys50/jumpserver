@@ -377,6 +377,11 @@ class UserGrantedTreeRefreshController:
         user = self.user
 
         with tmp_to_root_org():
+            orgids = self.orgs_id
+            orgids.pop()  # 干掉 default
+            orgids.append('')  # 添加 default
+
+            UserAssetGrantedTreeNodeRelation.objects.filter(user=user).exclude(org_id__in=self.orgs_id).delete()
             exists = UserAssetGrantedTreeNodeRelation.objects.filter(user=user).exists()
 
         if force or not exists:
@@ -589,6 +594,8 @@ class UserGrantedTreeBuildUtils(UserGrantedUtilsBase):
         node_asset_pairs = list(node_asset_pairs)
 
         for node_id, asset_id in node_asset_pairs:
+            if node_id not in node_id_key_mapper:
+                continue
             nkey = node_id_key_mapper[node_id]
             nodekey_assetsid_mapper[nkey].add(asset_id)
 
