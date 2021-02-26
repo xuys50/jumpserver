@@ -270,7 +270,3 @@ class Time:
         for timestamp, msg in zip(timestamps, self._msgs):
             logger.debug(f'TIME_IT: {msg} {timestamp-last}')
             last = timestamp
-
-
-def isinstance_method(attr):
-    return isinstance(attr, type(Time().time))
