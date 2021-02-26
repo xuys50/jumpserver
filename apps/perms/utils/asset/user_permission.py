@@ -48,6 +48,7 @@ def get_user_all_asset_perm_ids(user) -> set:
 
     asset_perm_ids = AssetPermission.objects.filter(
         id__in=asset_perm_ids).valid().values_list('id', flat=True)
+    asset_perm_ids = set(asset_perm_ids)
     return asset_perm_ids
 
 
@@ -324,7 +325,7 @@ class UserGrantedUtilsBase:
 
     def __init__(self, user, asset_perm_ids=None):
         self.user = user
-        self._asset_perm_ids = set(asset_perm_ids)
+        self._asset_perm_ids = asset_perm_ids and set(asset_perm_ids)
 
     @lazyproperty
     def asset_perm_ids(self) -> set:
