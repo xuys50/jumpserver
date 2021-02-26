@@ -156,6 +156,12 @@ class UnionQuerySet(QuerySet):
     def __iter__(self):
         return iter(self.__execute())
 
+    def __str__(self):
+        return str(self.__execute())
+
+    def __repr__(self):
+        return repr(self.__execute())
+
     @classmethod
     def test_it(cls):
         from assets.models import Asset
