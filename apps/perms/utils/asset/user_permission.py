@@ -324,7 +324,7 @@ class UserGrantedUtilsBase:
 
     def __init__(self, user, asset_perm_ids=None):
         self.user = user
-        self._asset_perm_ids = asset_perm_ids
+        self._asset_perm_ids = set(asset_perm_ids)
 
     @lazyproperty
     def asset_perm_ids(self) -> set:
