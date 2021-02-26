@@ -361,7 +361,7 @@ class UserGrantedTreeBuildUtils(UserGrantedUtilsBase):
     @timeit
     @ensure_in_real_or_default_org
     def rebuild_user_granted_tree(self):
-        logger.info(f'Rebuild user:{self.user} tree in org:{current_org}')
+        logger.info(f'Rebuild user tree: user={self.user} org={current_org}')
 
         user = self.user
         org_id = current_org.id

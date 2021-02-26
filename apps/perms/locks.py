@@ -8,4 +8,4 @@ class UserGrantedTreeRebuildLock(DistributedLock):
         name = self.name_template.format(
             org_id=org_id, user_id=user_id
         )
-        super().__init__(name=name)
+        super().__init__(name=name, release_on_transaction_commit=True)
